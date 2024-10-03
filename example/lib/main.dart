@@ -1,125 +1,189 @@
 import 'package:flutter/material.dart';
+import 'package:super_content_cache/super_content_cache.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SuperContentCache.configure(
+    cacheKey: 'superContentCache_myApp',
+    globalCacheDuration: const Duration(days: 7),
+    maxObjects: 500,
+  );
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  // Configure the cache with a custom cacheKey
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Super Content Cache Demo',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const ContentCacheDemo(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class ContentCacheDemo extends StatefulWidget {
+  const ContentCacheDemo({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _ContentCacheDemoState createState() => _ContentCacheDemoState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _ContentCacheDemoState extends State<ContentCacheDemo> {
+  final String key1 = 'user_profile_123';
+  final String tag1 = 'user_profiles';
 
-  void _incrementCounter() {
+  final String key2 = 'app_settings';
+  final String tag2 = 'settings';
+
+  Map<String, dynamic>? content1;
+  DateTime? updatedOn1;
+
+  Map<String, dynamic>? content2;
+  DateTime? updatedOn2;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContent();
+  }
+
+  Future<void> _loadContent() async {
+    // Load content for key1
+    final loadedContent1 = await SuperContentCache.getContent(key1);
+    final loadedUpdatedOn1 = await SuperContentCache.getUpdatedOn(key1);
+
+    // Load content for key2
+    final loadedContent2 = await SuperContentCache.getContent(key2);
+    final loadedUpdatedOn2 = await SuperContentCache.getUpdatedOn(key2);
+
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      content1 = loadedContent1;
+      updatedOn1 = loadedUpdatedOn1;
+
+      content2 = loadedContent2;
+      updatedOn2 = loadedUpdatedOn2;
     });
+  }
+
+  Future<void> _storeContent1() async {
+    await SuperContentCache.storeContent(
+      key: key1,
+      content: {
+        'name': 'John Doe',
+        'age': 30,
+      },
+      updatedOn: DateTime.now(),
+      tag: tag1,
+    );
+    _loadContent();
+  }
+
+  Future<void> _updateContent1() async {
+    await SuperContentCache.storeContent(
+      key: key1,
+      content: {
+        'name': 'John Doe',
+        'age': 31, // Updated age
+      },
+      updatedOn: DateTime.now(),
+      tag: tag1,
+    );
+    _loadContent();
+  }
+
+  Future<void> _storeContent2() async {
+    await SuperContentCache.storeContent(
+      key: key2,
+      content: {
+        'theme': 'dark',
+        'notifications': true,
+      },
+      updatedOn: DateTime.now(),
+      tag: tag2,
+    );
+    _loadContent();
+  }
+
+  Future<void> _clearKey1() async {
+    await SuperContentCache.clearKey(key1);
+    _loadContent();
+  }
+
+  Future<void> _clearTag1() async {
+    await SuperContentCache.clearTag(tag1);
+    _loadContent();
+  }
+
+  Future<void> _clearAll() async {
+    await SuperContentCache.clearAll();
+    _loadContent();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: const Text('Super Content Cache Demo'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Content for $key1:',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Text('Content: ${content1 ?? 'None'}'),
+              Text('Updated On: ${updatedOn1 ?? 'None'}'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _storeContent1,
+                child: const Text('Store Content 1'),
+              ),
+              ElevatedButton(
+                onPressed: _updateContent1,
+                child: const Text('Update Content 1'),
+              ),
+              ElevatedButton(
+                onPressed: _clearKey1,
+                child: const Text('Clear Key 1'),
+              ),
+              ElevatedButton(
+                onPressed: _clearTag1,
+                child: const Text('Clear Tag 1'),
+              ),
+              const Divider(),
+              Text(
+                'Content for $key2:',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Text('Content: ${content2 ?? 'None'}'),
+              Text('Updated On: ${updatedOn2 ?? 'None'}'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _storeContent2,
+                child: const Text('Store Content 2'),
+              ),
+              const Divider(),
+              ElevatedButton(
+                onPressed: _clearAll,
+                style: ElevatedButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Clear All Cache'),
+              ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
